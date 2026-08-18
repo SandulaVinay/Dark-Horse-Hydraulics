@@ -1,0 +1,207 @@
+/* --------------------------------------------------------------------------
+   Mobile-first polish for students using the site on phones.
+   The 3D assembly remains immersive, but the interface becomes thumb-friendly,
+   readable, and performance-conscious on small screens.
+   -------------------------------------------------------------------------- */
+
+@media (max-width: 767px) {
+  html { scroll-behavior: auto; }
+
+  body {
+    min-width: 0;
+    overflow-x: hidden;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  #root { width: 100%; overflow-x: hidden; }
+
+  /* Navigation */
+  nav.sticky {
+    padding: 10px 14px !important;
+    min-height: 62px;
+  }
+
+  nav.sticky .group { min-width: 0; }
+  nav.sticky .group > div:last-child { min-width: 0; }
+  nav.sticky .group span:first-child { font-size: 14px !important; letter-spacing: .12em !important; }
+  nav.sticky .group span:last-child { font-size: 7px !important; letter-spacing: .14em !important; }
+  nav.sticky .group > div:first-child { width: 36px !important; height: 36px !important; flex: 0 0 36px; }
+  nav.sticky .group svg { width: 23px !important; height: 23px !important; }
+  nav.sticky > div { gap: 10px; }
+  nav.sticky button[aria-label="Toggle menu"] { min-width: 42px; min-height: 42px; }
+
+  /* Hero */
+  .mobile-hero {
+    min-height: calc(100svh - 62px) !important;
+    padding: 72px 18px 78px !important;
+  }
+
+  .mobile-hero h1 {
+    font-size: clamp(2.55rem, 13vw, 4rem) !important;
+    line-height: .94 !important;
+    letter-spacing: -.045em !important;
+  }
+
+  .mobile-hero p {
+    max-width: 330px !important;
+    font-size: 15px !important;
+    line-height: 1.55 !important;
+  }
+
+  .mobile-hero .btn-primary,
+  .mobile-hero .btn-secondary {
+    width: min(100%, 340px);
+    min-height: 50px;
+    padding: .82rem 1rem !important;
+    font-size: 12px !important;
+  }
+
+  /* 3D introduction */
+  .mobile-3d-intro {
+    padding: 54px 18px 28px !important;
+  }
+
+  .mobile-3d-intro h2 {
+    font-size: clamp(2rem, 10vw, 3.25rem) !important;
+    line-height: .96 !important;
+  }
+
+  .mobile-3d-intro p {
+    font-size: 13px !important;
+    line-height: 1.55 !important;
+  }
+
+  /* Immersive assembly */
+  .assembly-timeline {
+    min-height: 320svh !important;
+    background: #141411 !important;
+  }
+
+  .assembly-stage-layout {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    grid-template-rows: 56svh 44svh !important;
+    height: 100svh !important;
+  }
+
+  .assembly-scene-panel {
+    height: 56svh !important;
+    min-height: 0 !important;
+    grid-row: 1;
+  }
+
+  .assembly-scene-panel .solar-scene {
+    height: 56svh !important;
+    min-height: 0 !important;
+  }
+
+  .assembly-scene-panel canvas {
+    touch-action: pan-y !important;
+  }
+
+  .assembly-instruction {
+    left: 14px !important;
+    top: 14px !important;
+    right: 14px !important;
+    width: auto !important;
+  }
+
+  .assembly-instruction > div {
+    padding: 9px 11px !important;
+    border-radius: 13px !important;
+  }
+
+  .assembly-instruction span:last-child {
+    font-size: 9px !important;
+  }
+
+  .assembly-copy-panel {
+    position: relative !important;
+    inset: auto !important;
+    grid-row: 2;
+    width: 100% !important;
+    height: 44svh !important;
+    max-height: none !important;
+    padding: 13px 17px 18px !important;
+    background: linear-gradient(180deg, #24231e 0%, #171713 100%) !important;
+    border-top: 1px solid rgba(217,119,63,.24);
+    overflow: hidden !important;
+  }
+
+  .assembly-copy-inner { max-width: none !important; }
+
+  .assembly-copy-panel .assembly-progress {
+    margin-bottom: 10px !important;
+  }
+
+  .assembly-copy-panel .assembly-progress button {
+    height: 5px !important;
+  }
+
+  .assembly-copy-panel .assembly-progress button.active {
+    width: 28px !important;
+  }
+
+  .assembly-copy-panel .assembly-progress button:not(.active) {
+    width: 8px !important;
+  }
+
+  .assembly-copy-panel .stage-name {
+    font-size: 8px !important;
+    letter-spacing: .18em !important;
+  }
+
+  .assembly-copy-panel .stage-title {
+    margin-top: 5px !important;
+    font-size: clamp(1.55rem, 7vw, 2.2rem) !important;
+    line-height: .96 !important;
+  }
+
+  .assembly-copy-panel .stage-description {
+    margin-top: 8px !important;
+    max-width: none !important;
+    font-size: 12px !important;
+    line-height: 1.42 !important;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .assembly-scroll-caption { display: none !important; }
+
+  /* Project cards / content spacing */
+  .mobile-section {
+    padding-left: 18px !important;
+    padding-right: 18px !important;
+  }
+
+  /* Floating WhatsApp action should never cover bottom navigation/content. */
+  .whatsapp-float {
+    right: 14px !important;
+    bottom: calc(14px + env(safe-area-inset-bottom)) !important;
+  }
+
+  /* Give touch targets a comfortable minimum size. */
+  button, a { -webkit-tap-highlight-color: transparent; }
+  .mobile-touch-target { min-height: 46px; }
+}
+
+@media (max-width: 380px) {
+  .assembly-stage-layout {
+    grid-template-rows: 53svh 47svh !important;
+  }
+
+  .assembly-scene-panel,
+  .assembly-scene-panel .solar-scene {
+    height: 53svh !important;
+  }
+
+  .assembly-copy-panel { height: 47svh !important; }
+  .mobile-hero { padding-top: 56px !important; }
+  .mobile-hero h1 { font-size: 2.35rem !important; }
+}
+
+@media (prefers-reduced-motion: reduce) and (max-width: 767px) {
+  .assembly-timeline { min-height: 220svh !important; }
+}
