@@ -1,0 +1,70 @@
+@media (max-width: 767px) {
+  /* The existing assembly DOM uses a sticky full-screen stage. Keep the section
+     tall enough for a deliberate seven-step touch scroll. */
+  #timeline-container {
+    min-height: 520svh !important;
+    height: 520svh !important;
+    background: #141411 !important;
+    touch-action: pan-y;
+  }
+
+  #timeline-container > .sticky {
+    position: sticky !important;
+    top: 0 !important;
+    height: 100svh !important;
+    min-height: 100svh !important;
+  }
+
+  #timeline-container > .sticky > .grid {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    grid-template-rows: 56svh 44svh !important;
+    height: 100svh !important;
+  }
+
+  #timeline-container .solar-scene {
+    height: 56svh !important;
+    min-height: 0 !important;
+  }
+
+  #timeline-container .solar-scene canvas {
+    touch-action: pan-y !important;
+  }
+
+  #timeline-container aside {
+    position: relative !important;
+    inset: auto !important;
+    grid-column: 1 !important;
+    grid-row: 2 !important;
+    height: 44svh !important;
+    max-height: none !important;
+    overflow: hidden !important;
+    padding: 12px 17px 18px !important;
+    background: linear-gradient(180deg, #24231e 0%, #171713 100%) !important;
+    border-top: 1px solid rgba(217,134,58,.24) !important;
+  }
+
+  #timeline-container aside > div {
+    max-width: none !important;
+  }
+
+  #timeline-container aside .text-\[10px\] {
+    font-size: 9px !important;
+  }
+
+  #timeline-container aside h2 {
+    font-size: clamp(1.55rem, 7vw, 2.25rem) !important;
+    line-height: .96 !important;
+    margin-top: 5px !important;
+  }
+
+  #timeline-container aside p {
+    font-size: 12px !important;
+    line-height: 1.42 !important;
+    margin-top: 8px !important;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+}
