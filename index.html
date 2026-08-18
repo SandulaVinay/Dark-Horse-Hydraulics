@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dark Horse Hydraulics</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              background: '#050810',
+              secondaryBackground: '#0B1220',
+              primaryDarkSurface: '#101827',
+              primaryBrandBlue: '#0066FF',
+              electricBlue: '#1683FF',
+              brightBlue: '#38BDF8',
+              primaryText: '#F8FAFC',
+              secondaryText: '#94A3B8',
+              border: '#1E293B',
+              whatsapp: '#25D366',
+            },
+            fontFamily: {
+              sans: ['Inter', 'sans-serif'],
+              heading: ['Outfit', 'sans-serif'],
+            }
+          }
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
