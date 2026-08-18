@@ -1,0 +1,91 @@
+/* Dark Horse visual refresh: graphite + ivory + copper */
+:root {
+  --background: #11110f;
+  --secondary-background: #1a1916;
+  --primary-dark-surface: #24221d;
+  --primary-brand-blue: #2b6cb0; /* reserved for the horse mark */
+  --electric-blue: #3f78a8;
+  --bright-blue: #9fc0da;
+  --cyan-accent: #6bb6b0;
+  --copper: #d97732;
+  --copper-bright: #ff9f43;
+  --gold: #f2c46d;
+  --metal: #b9b3a8;
+  --primary-text: #f5f1e8;
+  --secondary-text: #bcb6aa;
+  --muted-text: #777269;
+  --border: rgba(236, 226, 208, 0.14);
+  --glass: rgba(29, 28, 24, 0.72);
+}
+
+html, body {
+  background: #11110f !important;
+  color: var(--primary-text) !important;
+}
+
+::selection { background: rgba(217, 119, 50, 0.34) !important; color: #fffaf0; }
+::-webkit-scrollbar-track { background: #11110f !important; }
+::-webkit-scrollbar-thumb { background: linear-gradient(180deg, #5f5a51, #c66b2f) !important; border-color: #11110f !important; }
+::-webkit-scrollbar-thumb:hover { background: linear-gradient(180deg, #8b8378, #ff9f43) !important; }
+
+/* Existing utility classes: warm them up without rewriting the component tree. */
+.bg-slate-900 { background: #211f1b !important; }
+.bg-slate-950 { background: #11110f !important; }
+.text-blue-400, .text-blue-500, .text-cyan-400 { color: #f0a05b !important; }
+.bg-\[\#050810\], .bg-\[\#0B1220\] { background: #11110f !important; }
+
+.blueprint-grid {
+  background-image:
+    linear-gradient(to right, rgba(230, 218, 195, 0.055) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(230, 218, 195, 0.055) 1px, transparent 1px) !important;
+}
+.blueprint-grid-fine {
+  background-image:
+    linear-gradient(to right, rgba(230, 218, 195, 0.045) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(230, 218, 195, 0.045) 1px, transparent 1px) !important;
+}
+.engineering-glow {
+  background:
+    radial-gradient(circle at 52% 50%, rgba(217, 119, 50, 0.17), transparent 25%),
+    radial-gradient(circle at 42% 55%, rgba(242, 196, 109, 0.07), transparent 35%),
+    radial-gradient(circle at 70% 40%, rgba(107, 182, 176, 0.05), transparent 30%) !important;
+}
+.surface-glass {
+  background: rgba(27, 26, 23, 0.78) !important;
+  border-color: rgba(236, 226, 208, 0.13) !important;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.3) !important;
+}
+.btn-primary {
+  color: #1a1510 !important;
+  border-color: rgba(255, 207, 151, 0.48) !important;
+  background: linear-gradient(135deg, #e08a42, #c65d24 60%, #f2b45e) !important;
+  box-shadow: 0 14px 40px rgba(198, 93, 36, 0.24), inset 0 1px 0 rgba(255,255,255,.28) !important;
+}
+.btn-primary:hover { box-shadow: 0 18px 46px rgba(198, 93, 36, 0.36), inset 0 1px 0 rgba(255,255,255,.32) !important; }
+.btn-secondary {
+  color: #f5f1e8 !important;
+  background: rgba(36, 34, 29, 0.72) !important;
+  border-color: rgba(236, 226, 208, 0.18) !important;
+}
+.btn-secondary:hover {
+  color: #fffaf0 !important;
+  border-color: rgba(240, 160, 91, 0.52) !important;
+  background: rgba(51, 46, 39, 0.82) !important;
+}
+.scroll-indicator-dot.active {
+  border-color: #ffb45f !important;
+  background: #d97732 !important;
+  box-shadow: 0 0 0 5px rgba(217,119,50,.10), 0 0 20px rgba(255,159,67,.65) !important;
+}
+.section-kicker { color: #f0a05b !important; }
+
+/* A more premium stage accent used by the 3D scene and narrative UI. */
+.stage-accent { color: #f0a05b !important; }
+.stage-accent-dot { background: #d97732 !important; box-shadow: 0 0 16px rgba(255,159,67,.7) !important; }
+
+/* Prevent the old all-blue visual language from dominating arbitrary inline utility classes. */
+.shadow-blue, .shadow-cyan { box-shadow: 0 18px 50px rgba(217,119,50,.18) !important; }
+
+@media (max-width: 767px) {
+  .engineering-glow { background: radial-gradient(circle at 50% 55%, rgba(217,119,50,.14), transparent 34%); }
+}
