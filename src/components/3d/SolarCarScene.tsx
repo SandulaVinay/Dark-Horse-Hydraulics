@@ -10,18 +10,18 @@ export const SolarCarScene = ({ activePartId }: SolarCarSceneProps) => {
   const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
 
   return (
-    <div className="relative h-full min-h-0 w-full overflow-hidden solar-scene">
+    <div className="relative h-full min-h-0 w-full overflow-hidden solar-scene pointer-events-none">
       <div className="engineering-glow pointer-events-none absolute inset-0" />
       <div className="blueprint-grid-fine pointer-events-none absolute inset-0 opacity-20" />
-      <Suspense fallback={<div className="absolute inset-0 flex flex-col items-center justify-center bg-[#141411]/95 px-5 text-center"><span className="text-xs font-extrabold tracking-[0.2em] text-[#E89A68]">DARK HORSE ENGINEERING LAB</span><span className="mt-2 text-[10px] font-mono uppercase tracking-[0.16em] text-[#bcb6aa]">Building the prototype</span></div>}>
+      <Suspense fallback={<div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center bg-[#141411]/95 px-5 text-center"><span className="text-xs font-extrabold tracking-[0.2em] text-[#E89A68]">DARK HORSE ENGINEERING LAB</span><span className="mt-2 text-[10px] font-mono uppercase tracking-[0.16em] text-[#bcb6aa]">Building the prototype</span></div>}>
         <Canvas
           camera={{ position: isMobile ? [6.7, 3.7, 7.8] : [6.4, 3.35, 7.8], fov: isMobile ? 50 : 43 }}
           dpr={isMobile ? [1, 1.25] : [1, 1.5]}
           frameloop="always"
           gl={{ antialias: !isMobile, alpha: true, powerPreference: "high-performance" }}
-          style={{ height: "100%", width: "100%", touchAction: "none" }}
-          onPointerDown={(event) => event.stopPropagation()}
-          onWheel={(event) => event.preventDefault()}
+          style={{ height: "100%", width: "100%", touchAction: "auto", pointerEvents: "none" }}
+          eventSource={typeof document !== "undefined" ? document.body : undefined}
+          eventPrefix="client"
         >
           <ambientLight intensity={0.46} color="#fff7e8" />
           <hemisphereLight args={["#fff5e4", "#181611", 0.72]} />
@@ -44,8 +44,8 @@ export const SolarCarScene = ({ activePartId }: SolarCarSceneProps) => {
         </div>
       </div>
 
-      {inspectionMode && <div className="pointer-events-none absolute bottom-5 right-5 hidden rounded-full border border-white/10 bg-black/35 px-3 py-2 text-[9px] font-mono tracking-[0.16em] text-white/70 backdrop-blur-md sm:block">DRAG TO INSPECT</div>}
-      {!inspectionMode && <div className="pointer-events-none absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full border border-white/10 bg-black/25 px-3 py-1.5 text-[8px] font-mono uppercase tracking-[0.16em] text-white/55 backdrop-blur-md sm:hidden">Scroll to assemble</div>}
+      {inspectionMode && <div className="pointer-events-none absolute bottom-5 right-5 hidden rounded-full border border-white/10 bg-black/35 px-3 py-2 text-[9px] font-mono tracking-[0.16em] text-white/70 backdrop-blur-md sm:block">SCROLL TO DISASSEMBLE</div>}
+      {!inspectionMode && <div className="pointer-events-none absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full border border-white/10 bg-black/25 px-3 py-1.5 text-[8px] font-mono uppercase tracking-[0.16em] text-white/55 backdrop-blur-md sm:hidden">Scroll anywhere to assemble</div>}
     </div>
   );
 };
