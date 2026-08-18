@@ -7,21 +7,14 @@ interface SolarCarModelProps {
   activePartId: string | null;
 }
 
-type PositionPair = {
-  exp: Vector3;
-  asb: Vector3;
-};
+type PositionPair = { exp: Vector3; asb: Vector3 };
 
 const clamp01 = (value: number) => Math.max(0, Math.min(1, value));
-
 const stageProgress = (progress: number, start: number, end: number) =>
   clamp01((progress - start) / (end - start));
 
-export const SolarCarModel: React.FC<SolarCarModelProps> = ({
-  activePartId,
-}) => {
+export const SolarCarModel: React.FC<SolarCarModelProps> = ({ activePartId }) => {
   const groupRef = useRef<Group>(null);
-
   const wheelFL = useRef<Group>(null);
   const wheelFR = useRef<Group>(null);
   const wheelRL = useRef<Group>(null);
@@ -55,20 +48,10 @@ export const SolarCarModel: React.FC<SolarCarModelProps> = ({
 
   const targets = useMemo(
     () => ({
-      wheelFL: new Vector3(),
-      wheelFR: new Vector3(),
-      wheelRL: new Vector3(),
-      wheelRR: new Vector3(),
-      battery: new Vector3(),
-      chassis: new Vector3(),
-      motor: new Vector3(),
-      electronics: new Vector3(),
-      wiring: new Vector3(),
-      solarLeft: new Vector3(),
-      solarRight: new Vector3(),
-      body: new Vector3(),
-      cameraPos: new Vector3(),
-      cameraLook: new Vector3(),
+      wheelFL: new Vector3(), wheelFR: new Vector3(), wheelRL: new Vector3(), wheelRR: new Vector3(),
+      battery: new Vector3(), chassis: new Vector3(), motor: new Vector3(), electronics: new Vector3(),
+      wiring: new Vector3(), solarLeft: new Vector3(), solarRight: new Vector3(), body: new Vector3(),
+      cameraPos: new Vector3(), cameraLook: new Vector3(),
     }),
     []
   );
@@ -89,7 +72,6 @@ export const SolarCarModel: React.FC<SolarCarModelProps> = ({
 
   useFrame((state) => {
     const progress = clamp01(assemblyProgress.value);
-
     const pWheels = stageProgress(progress, 0, 0.15);
     const pBattery = stageProgress(progress, 0.15, 0.3);
     const pChassis = stageProgress(progress, 0.3, 0.45);
@@ -113,7 +95,6 @@ export const SolarCarModel: React.FC<SolarCarModelProps> = ({
 
     let previous = cameraViews[0];
     let next = cameraViews[cameraViews.length - 1];
-
     for (let i = 0; i < cameraViews.length - 1; i += 1) {
       if (progress >= cameraViews[i].progress && progress <= cameraViews[i + 1].progress) {
         previous = cameraViews[i];
@@ -121,16 +102,11 @@ export const SolarCarModel: React.FC<SolarCarModelProps> = ({
         break;
       }
     }
-
-    const cameraProgress = clamp01(
-      (progress - previous.progress) / (next.progress - previous.progress || 1)
-    );
-
+    const cameraProgress = clamp01((progress - previous.progress) / (next.progress - previous.progress || 1));
     targets.cameraPos.lerpVectors(previous.pos, next.pos, cameraProgress);
     targets.cameraLook.lerpVectors(previous.look, next.look, cameraProgress);
 
     const damping = 0.085;
-
     wheelFL.current?.position.lerp(targets.wheelFL, damping);
     wheelFR.current?.position.lerp(targets.wheelFR, damping);
     wheelRL.current?.position.lerp(targets.wheelRL, damping);
@@ -145,12 +121,7 @@ export const SolarCarModel: React.FC<SolarCarModelProps> = ({
     body.current?.position.lerp(targets.body, damping);
 
     state.camera.position.lerp(targets.cameraPos, 0.045);
-
-    const controls = state.controls as {
-      target?: Vector3;
-      update?: () => void;
-    } | null;
-
+    const controls = state.controls as { target?: Vector3; update?: () => void } | null;
     if (controls?.target && controls.update) {
       controls.target.lerp(targets.cameraLook, 0.045);
       controls.update();
@@ -168,25 +139,18 @@ export const SolarCarModel: React.FC<SolarCarModelProps> = ({
 
     if (groupRef.current) {
       const targetRotation = progress > 0.96 ? 0.22 : 0;
-      groupRef.current.rotation.y +=
-        (targetRotation - groupRef.current.rotation.y) * 0.04;
+      groupRef.current.rotation.y += (targetRotation - groupRef.current.rotation.y) * 0.04;
     }
   });
 
-  const material = (
-    stageId: string,
-    color: string,
-    metalness = 0.65,
-    roughness = 0.28
-  ) => {
+  const material = (stageId: string, color: string, metalness = 0.65, roughness = 0.28) => {
     const highlighted = activePartId === stageId;
-
     return {
       color: highlighted ? "#38BDF8" : color,
       metalness,
       roughness,
       emissive: highlighted ? "#0EA5E9" : "#000000",
-      emissiveIntensity: highlighted ? 0.8 : 0.04,
+      emissiveIntensity: highlighted ? 0.9 : 0.035,
     };
   };
 
@@ -197,11 +161,15 @@ export const SolarCarModel: React.FC<SolarCarModelProps> = ({
         <group key={index} ref={ref}>
           <mesh rotation={[0, 0, Math.PI / 2]}>
             <cylinderGeometry args={[0.58, 0.58, 0.28, 32]} />
-            <meshStandardMaterial {...material("mobility", "#111827", 0.35, 0.55)} />
+            <meshStandardMaterial {...material("mobility", "#151a22", 0.32, 0.62)} />
           </mesh>
           <mesh rotation={[0, 0, Math.PI / 2]}>
             <cylinderGeometry args={[0.34, 0.34, 0.31, 20]} />
-            <meshStandardMaterial {...material("mobility", "#64748B", 0.9, 0.18)} />
+            <meshStandardMaterial {...material("mobility", "#a7b0bb", 0.92, 0.15)} />
+          </mesh>
+          <mesh position={[0, 0, index % 2 === 0 ? 0.16 : -0.16]}>
+            <cylinderGeometry args={[0.075, 0.075, 0.025, 16]} />
+            <meshStandardMaterial color="#cbd5e1" metalness={0.9} roughness={0.12} />
           </mesh>
         </group>
       ))}
@@ -210,35 +178,27 @@ export const SolarCarModel: React.FC<SolarCarModelProps> = ({
       <group ref={chassis}>
         <mesh>
           <boxGeometry args={[3.4, 0.18, 2.3]} />
-          <meshStandardMaterial {...material("structure", "#334155", 0.85, 0.25)} />
+          <meshStandardMaterial {...material("structure", "#7f8792", 0.9, 0.22)} />
         </mesh>
         <mesh position={[0, 0.35, 1.02]}>
           <boxGeometry args={[3.25, 0.18, 0.16]} />
-          <meshStandardMaterial {...material("structure", "#64748B", 0.85, 0.22)} />
+          <meshStandardMaterial {...material("structure", "#c3c9d1", 0.92, 0.18)} />
         </mesh>
         <mesh position={[0, 0.35, -1.02]}>
           <boxGeometry args={[3.25, 0.18, 0.16]} />
-          <meshStandardMaterial {...material("structure", "#64748B", 0.85, 0.22)} />
+          <meshStandardMaterial {...material("structure", "#c3c9d1", 0.92, 0.18)} />
         </mesh>
         <mesh position={[-1.52, 0.35, 0]}>
           <boxGeometry args={[0.16, 0.18, 2.1]} />
-          <meshStandardMaterial {...material("structure", "#64748B", 0.85, 0.22)} />
+          <meshStandardMaterial {...material("structure", "#9aa3ae", 0.92, 0.18)} />
         </mesh>
         <mesh position={[1.52, 0.35, 0]}>
           <boxGeometry args={[0.16, 0.18, 2.1]} />
-          <meshStandardMaterial {...material("structure", "#64748B", 0.85, 0.22)} />
+          <meshStandardMaterial {...material("structure", "#9aa3ae", 0.92, 0.18)} />
         </mesh>
         <mesh position={[0, 0.42, 0.35]}>
           <boxGeometry args={[1.15, 0.18, 0.9]} />
-          <meshStandardMaterial {...material("structure", "#1E293B", 0.55, 0.45)} />
-        </mesh>
-        <mesh position={[0, 0.78, 0.78]} rotation={[Math.PI / 2.8, 0, 0]}>
-          <cylinderGeometry args={[0.055, 0.055, 0.75, 12]} />
-          <meshStandardMaterial {...material("structure", "#94A3B8", 0.9, 0.18)} />
-        </mesh>
-        <mesh position={[0, 1.02, 1.02]} rotation={[Math.PI / 2, 0, 0]}>
-          <torusGeometry args={[0.28, 0.045, 10, 24]} />
-          <meshStandardMaterial {...material("structure", "#64748B", 0.9, 0.18)} />
+          <meshStandardMaterial {...material("structure", "#303842", 0.65, 0.4)} />
         </mesh>
       </group>
 
@@ -246,15 +206,19 @@ export const SolarCarModel: React.FC<SolarCarModelProps> = ({
       <group ref={battery}>
         <mesh>
           <boxGeometry args={[1.75, 0.42, 1.25]} />
-          <meshStandardMaterial {...material("power", "#1E293B", 0.75, 0.3)} />
+          <meshStandardMaterial {...material("power", "#242a33", 0.78, 0.26)} />
         </mesh>
         <mesh position={[0, 0.22, 0]}>
           <boxGeometry args={[1.25, 0.025, 0.78]} />
-          <meshStandardMaterial color="#0F172A" metalness={0.2} roughness={0.55} />
+          <meshStandardMaterial color="#111827" metalness={0.45} roughness={0.35} />
         </mesh>
         <mesh position={[-0.62, 0.24, 0.42]}>
           <sphereGeometry args={[0.055, 12, 12]} />
-          <meshStandardMaterial color="#38BDF8" emissive="#38BDF8" emissiveIntensity={1.5} />
+          <meshStandardMaterial color="#38BDF8" emissive="#38BDF8" emissiveIntensity={1.25} />
+        </mesh>
+        <mesh position={[0.62, 0.24, -0.42]}>
+          <sphereGeometry args={[0.055, 12, 12]} />
+          <meshStandardMaterial color="#f8fafc" emissive="#f8fafc" emissiveIntensity={0.6} />
         </mesh>
       </group>
 
@@ -262,11 +226,15 @@ export const SolarCarModel: React.FC<SolarCarModelProps> = ({
       <group ref={motor}>
         <mesh rotation={[Math.PI / 2, 0, 0]}>
           <cylinderGeometry args={[0.42, 0.42, 0.75, 24]} />
-          <meshStandardMaterial {...material("propulsion", "#475569", 0.9, 0.2)} />
+          <meshStandardMaterial {...material("propulsion", "#69727d", 0.92, 0.17)} />
         </mesh>
         <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, 0, 0.4]}>
           <cylinderGeometry args={[0.19, 0.19, 0.12, 20]} />
-          <meshStandardMaterial {...material("propulsion", "#CBD5E1", 0.95, 0.15)} />
+          <meshStandardMaterial {...material("propulsion", "#e1e5ea", 0.96, 0.12)} />
+        </mesh>
+        <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, 0, -0.4]}>
+          <cylinderGeometry args={[0.12, 0.12, 0.08, 16]} />
+          <meshStandardMaterial color="#bfc6cf" metalness={0.96} roughness={0.12} />
         </mesh>
       </group>
 
@@ -274,44 +242,44 @@ export const SolarCarModel: React.FC<SolarCarModelProps> = ({
       <group ref={electronics}>
         <mesh>
           <boxGeometry args={[0.9, 0.16, 0.62]} />
-          <meshStandardMaterial {...material("control", "#0F172A", 0.6, 0.3)} />
+          <meshStandardMaterial {...material("control", "#151a22", 0.66, 0.26)} />
         </mesh>
         <mesh position={[-0.22, 0.1, 0]}>
           <boxGeometry args={[0.16, 0.05, 0.22]} />
-          <meshStandardMaterial color="#38BDF8" emissive="#38BDF8" emissiveIntensity={0.8} />
+          <meshStandardMaterial color="#38BDF8" emissive="#38BDF8" emissiveIntensity={0.7} />
         </mesh>
         <mesh position={[0.22, 0.1, 0]}>
           <boxGeometry args={[0.16, 0.05, 0.22]} />
-          <meshStandardMaterial color="#60A5FA" emissive="#60A5FA" emissiveIntensity={0.8} />
+          <meshStandardMaterial color="#e2e8f0" metalness={0.65} roughness={0.22} />
         </mesh>
       </group>
 
       {/* WIRING */}
       <group ref={wiring}>
         <mesh position={[-0.8, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
-          <cylinderGeometry args={[0.025, 0.025, 1.4, 8]} />
-          <meshStandardMaterial {...material("control", "#111827", 0.15, 0.75)} />
+          <cylinderGeometry args={[0.027, 0.027, 1.4, 8]} />
+          <meshStandardMaterial {...material("control", "#111318", 0.12, 0.82)} />
         </mesh>
         <mesh position={[0.8, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
-          <cylinderGeometry args={[0.025, 0.025, 1.4, 8]} />
-          <meshStandardMaterial {...material("control", "#111827", 0.15, 0.75)} />
+          <cylinderGeometry args={[0.027, 0.027, 1.4, 8]} />
+          <meshStandardMaterial {...material("control", "#111318", 0.12, 0.82)} />
         </mesh>
       </group>
 
       {/* SOLAR PANELS */}
       {[solarPanelLeft, solarPanelRight].map((ref, index) => (
-        <group
-          key={index}
-          ref={ref}
-          rotation={[-0.12, 0, index === 0 ? -0.08 : 0.08]}
-        >
+        <group key={index} ref={ref} rotation={[-0.12, 0, index === 0 ? -0.08 : 0.08]}>
           <mesh>
             <boxGeometry args={[1.25, 0.08, 2.2]} />
-            <meshStandardMaterial {...material("solar", "#0F2A4A", 0.75, 0.2)} />
+            <meshStandardMaterial {...material("solar", "#18395f", 0.72, 0.22)} />
           </mesh>
           <mesh position={[0, 0.05, 0]}>
             <boxGeometry args={[1.05, 0.012, 2]} />
-            <meshStandardMaterial color="#123A63" metalness={0.55} roughness={0.25} />
+            <meshStandardMaterial color="#1d4f7e" metalness={0.5} roughness={0.22} emissive="#0a4b7a" emissiveIntensity={0.15} />
+          </mesh>
+          <mesh position={[0, 0.057, 0]}>
+            <boxGeometry args={[0.98, 0.005, 0.02]} />
+            <meshStandardMaterial color="#93c5fd" emissive="#60a5fa" emissiveIntensity={0.25} />
           </mesh>
         </group>
       ))}
@@ -320,19 +288,23 @@ export const SolarCarModel: React.FC<SolarCarModelProps> = ({
       <group ref={body}>
         <mesh>
           <boxGeometry args={[3.45, 0.16, 2.05]} />
-          <meshStandardMaterial {...material("final", "#1E293B", 0.9, 0.2)} />
+          <meshStandardMaterial {...material("final", "#555d67", 0.94, 0.16)} />
         </mesh>
         <mesh position={[0, 0.48, 0.1]} scale={[1, 0.65, 0.88]}>
           <sphereGeometry args={[1.35, 32, 16]} />
-          <meshStandardMaterial
-            {...material("final", "#0B1220", 0.75, 0.18)}
+          <meshPhysicalMaterial
+            color="#121821"
+            metalness={0.42}
+            roughness={0.16}
+            clearcoat={0.85}
+            clearcoatRoughness={0.12}
             transparent
-            opacity={0.76}
+            opacity={0.68}
           />
         </mesh>
         <mesh position={[0, 0.58, 0.95]}>
-          <boxGeometry args={[2.8, 0.12, 0.08]} />
-          <meshStandardMaterial color="#38BDF8" emissive="#38BDF8" emissiveIntensity={0.7} />
+          <boxGeometry args={[2.8, 0.09, 0.07]} />
+          <meshStandardMaterial color="#dbeafe" emissive="#60a5fa" emissiveIntensity={0.45} metalness={0.35} roughness={0.18} />
         </mesh>
       </group>
     </group>
