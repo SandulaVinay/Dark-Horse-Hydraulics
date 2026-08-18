@@ -9,12 +9,14 @@ gsap.registerPlugin(ScrollTrigger);
 
 export const AssemblyTimeline = () => {
   const containerRef = useRef<HTMLDivElement>(null);
+  const stageLayoutRef = useRef<HTMLDivElement>(null);
   const activeStageRef = useRef("mobility");
   const [activeStageId, setActiveStageId] = useState("mobility");
 
   useEffect(() => {
     const container = containerRef.current;
-    if (!container) return;
+    const stageLayout = stageLayoutRef.current;
+    if (!container || !stageLayout) return;
 
     const getStage = (progress: number) =>
       assemblyStages.find(
@@ -22,12 +24,19 @@ export const AssemblyTimeline = () => {
           progress >= stage.startProgress && progress <= stage.endProgress
       ) ?? assemblyStages[assemblyStages.length - 1];
 
+    // Pin the complete assembly viewport while the user scrolls through the
+    // assembly section. This is deliberately handled by ScrollTrigger rather
+    // than relying on CSS sticky, which is unreliable on some mobile browsers
+    // when the page/root has overflow-x rules or nested viewport-sized content.
     const trigger = ScrollTrigger.create({
       trigger: container,
+      pin: stageLayout,
+      pinSpacing: false,
       start: "top top",
-      end: "bottom bottom",
+      end: () => `+=${Math.max(1, container.offsetHeight - window.innerHeight)}`,
       scrub: 0.35,
       invalidateOnRefresh: true,
+      anticipatePin: 1,
       onUpdate: (self) => {
         assemblyProgress.value = self.progress;
 
@@ -41,7 +50,13 @@ export const AssemblyTimeline = () => {
 
     assemblyProgress.value = trigger.progress;
 
+    const refresh = () => ScrollTrigger.refresh();
+    window.addEventListener("resize", refresh);
+    window.addEventListener("orientationchange", refresh);
+
     return () => {
+      window.removeEventListener("resize", refresh);
+      window.removeEventListener("orientationchange", refresh);
       trigger.kill();
       assemblyProgress.value = 0;
     };
@@ -52,7 +67,7 @@ export const AssemblyTimeline = () => {
     if (!container) return;
 
     const start = container.getBoundingClientRect().top + window.scrollY;
-    const scrollDistance = container.offsetHeight - window.innerHeight;
+    const scrollDistance = Math.max(1, container.offsetHeight - window.innerHeight);
     const target = start + scrollDistance * progress;
 
     window.scrollTo({
@@ -68,7 +83,10 @@ export const AssemblyTimeline = () => {
       aria-label="Solar car engineering assembly"
       className="assembly-timeline relative min-h-[360vh] bg-[#141411]"
     >
-      <div className="assembly-stage-layout sticky top-0 h-screen w-full overflow-hidden">
+      <div
+        ref={stageLayoutRef}
+        className="assembly-stage-layout relative top-0 h-screen w-full overflow-hidden"
+      >
         <div className="assembly-scene-panel relative h-full min-h-0 lg:col-span-7">
           <SolarCarScene activePartId={activeStageId} />
 
