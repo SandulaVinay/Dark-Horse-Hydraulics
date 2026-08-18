@@ -1,14 +1,27 @@
-import React, { useRef, useMemo } from "react";
+import React, { useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
-import { Vector3, Group } from "three";
+import { Group, Vector3 } from "three";
+import { assemblyProgress } from "../../data/assemblyProgress";
 
 interface SolarCarModelProps {
   activePartId: string | null;
 }
 
-export const SolarCarModel: React.FC<SolarCarModelProps> = ({ activePartId }) => {
-  // Inner refs for components
+type PositionPair = {
+  exp: Vector3;
+  asb: Vector3;
+};
+
+const clamp01 = (value: number) => Math.max(0, Math.min(1, value));
+
+const stageProgress = (progress: number, start: number, end: number) =>
+  clamp01((progress - start) / (end - start));
+
+export const SolarCarModel: React.FC<SolarCarModelProps> = ({
+  activePartId,
+}) => {
   const groupRef = useRef<Group>(null);
+
   const wheelFL = useRef<Group>(null);
   const wheelFR = useRef<Group>(null);
   const wheelRL = useRef<Group>(null);
@@ -22,28 +35,26 @@ export const SolarCarModel: React.FC<SolarCarModelProps> = ({ activePartId }) =>
   const solarPanelRight = useRef<Group>(null);
   const body = useRef<Group>(null);
 
-  // Setup Vector3 endpoints for interpolation (lerp)
-  // [Exploded, Assembled]
-  const positions = useMemo(() => {
-    return {
-      wheelFL: { exp: new Vector3(-4, 0.35, 4), asb: new Vector3(-1.2, 0.35, 1.2) },
-      wheelFR: { exp: new Vector3(4, 0.35, 4), asb: new Vector3(1.2, 0.35, 1.2) },
-      wheelRL: { exp: new Vector3(-4, 0.35, -4), asb: new Vector3(-1.2, 0.35, -1.2) },
-      wheelRR: { exp: new Vector3(4, 0.35, -4), asb: new Vector3(1.2, 0.35, -1.2) },
-      battery: { exp: new Vector3(0, 4, 0), asb: new Vector3(0, 0.45, 0) },
-      chassis: { exp: new Vector3(0, -3, 0), asb: new Vector3(0, 0.45, 0) },
-      motor: { exp: new Vector3(0, 0.35, -5), asb: new Vector3(0, 0.35, -1.2) },
-      electronics: { exp: new Vector3(0, 3, 0.8), asb: new Vector3(0, 0.65, 0.8) },
-      wiring: { exp: new Vector3(0, 3, 0.2), asb: new Vector3(0, 0.4, 0.2) },
-      solarLeft: { exp: new Vector3(-4, 4, 0.2), asb: new Vector3(-0.8, 1.2, 0.2) },
-      solarRight: { exp: new Vector3(4, 4, 0.2), asb: new Vector3(0.8, 1.2, 0.2) },
-      body: { exp: new Vector3(0, 5, 0.2), asb: new Vector3(0, 1.05, 0.2) },
-    };
-  }, []);
+  const positions = useMemo<Record<string, PositionPair>>(
+    () => ({
+      wheelFL: { exp: new Vector3(-4.2, 1.0, 3.2), asb: new Vector3(-1.65, 0.42, 1.35) },
+      wheelFR: { exp: new Vector3(4.2, 1.0, 3.2), asb: new Vector3(1.65, 0.42, 1.35) },
+      wheelRL: { exp: new Vector3(-4.2, 1.0, -3.2), asb: new Vector3(-1.65, 0.42, -1.35) },
+      wheelRR: { exp: new Vector3(4.2, 1.0, -3.2), asb: new Vector3(1.65, 0.42, -1.35) },
+      battery: { exp: new Vector3(0, 4.2, 0), asb: new Vector3(0, 0.58, 0) },
+      chassis: { exp: new Vector3(0, -3.2, 0), asb: new Vector3(0, 0.72, 0) },
+      motor: { exp: new Vector3(0, 0.7, -4.8), asb: new Vector3(0, 0.72, -1.05) },
+      electronics: { exp: new Vector3(0, 3.5, 1), asb: new Vector3(0, 0.95, 0.75) },
+      wiring: { exp: new Vector3(0, 3.8, -0.3), asb: new Vector3(0, 0.86, 0) },
+      solarLeft: { exp: new Vector3(-4.5, 4.2, 0.2), asb: new Vector3(-0.78, 1.58, 0) },
+      solarRight: { exp: new Vector3(4.5, 4.2, 0.2), asb: new Vector3(0.78, 1.58, 0) },
+      body: { exp: new Vector3(0, 5.3, 0.2), asb: new Vector3(0, 1.25, 0) },
+    }),
+    []
+  );
 
-  // Temporary vectors to hold the target positions per frame without garbage collection overhead
-  const targets = useMemo(() => {
-    return {
+  const targets = useMemo(
+    () => ({
       wheelFL: new Vector3(),
       wheelFR: new Vector3(),
       wheelRL: new Vector3(),
@@ -58,352 +69,272 @@ export const SolarCarModel: React.FC<SolarCarModelProps> = ({ activePartId }) =>
       body: new Vector3(),
       cameraPos: new Vector3(),
       cameraLook: new Vector3(),
-    };
-  }, [positions]);
+    }),
+    []
+  );
 
-  // Define cinematic camera viewpoints per stage
-  const cameraViews = useMemo(() => {
-    return [
-      { progress: 0.0, pos: new Vector3(4, 2, 4), look: new Vector3(0, 0, 0) },       // Start: Wheels exploded
-      { progress: 0.15, pos: new Vector3(3, 1, 3.5), look: new Vector3(0, 0.3, 1) },  // Stage 1: Wheels assembled, look front low
-      { progress: 0.30, pos: new Vector3(2.5, 2.5, 2.5), look: new Vector3(0, 0.4, 0) },// Stage 2: Battery core focus
-      { progress: 0.45, pos: new Vector3(3.5, 1.8, 3.5), look: new Vector3(0, 0.4, 0) },// Stage 3: Chassis spaceframe
-      { progress: 0.60, pos: new Vector3(1.5, 1.5, -3.8), look: new Vector3(0, 0.3, -1.2) },// Stage 4: Rear Motor propulsion focus
-      { progress: 0.72, pos: new Vector3(2.2, 2.2, 2.5), look: new Vector3(0, 0.6, 0.8) },  // Stage 5: Electronics control
-      { progress: 0.88, pos: new Vector3(0.1, 5.0, 1.8), look: new Vector3(0, 1.0, 0) },    // Stage 6: Solar Panels top look down
-      { progress: 1.0, pos: new Vector3(4, 3, 5), look: new Vector3(0, 0.5, 0) }       // Final: Assembled full showcase
-    ];
-  }, []);
+  const cameraViews = useMemo(
+    () => [
+      { progress: 0, pos: new Vector3(5.2, 2.8, 5.8), look: new Vector3(0, 0.7, 0) },
+      { progress: 0.15, pos: new Vector3(4.2, 1.9, 4.8), look: new Vector3(0, 0.45, 0.7) },
+      { progress: 0.3, pos: new Vector3(3.6, 2.8, 3.8), look: new Vector3(0, 0.6, 0) },
+      { progress: 0.45, pos: new Vector3(4.5, 2.3, 4.5), look: new Vector3(0, 0.65, 0) },
+      { progress: 0.6, pos: new Vector3(2.3, 1.7, -4.6), look: new Vector3(0, 0.7, -1) },
+      { progress: 0.72, pos: new Vector3(3.2, 2.8, 3.6), look: new Vector3(0, 0.9, 0.6) },
+      { progress: 0.88, pos: new Vector3(0.2, 5.2, 3.4), look: new Vector3(0, 1.0, 0) },
+      { progress: 1, pos: new Vector3(5.2, 3.2, 6.2), look: new Vector3(0, 0.65, 0) },
+    ],
+    []
+  );
 
   useFrame((state) => {
-    // 1. Calculate scroll progress reactively from the HTML container
-    const container = document.getElementById("timeline-container");
-    let progress = 0;
-    if (container) {
-      const rect = container.getBoundingClientRect();
-      const totalScrollHeight = rect.height - window.innerHeight;
-      if (totalScrollHeight > 0) {
-        progress = Math.max(0, Math.min(1, -rect.top / totalScrollHeight));
-      }
-    }
+    const progress = clamp01(assemblyProgress.value);
 
-    // 2. Compute targets for all components
-    // Stage 1: Wheels (0.0 to 0.15)
-    const pWheels = Math.max(0, Math.min(1, progress / 0.15));
+    const pWheels = stageProgress(progress, 0, 0.15);
+    const pBattery = stageProgress(progress, 0.15, 0.3);
+    const pChassis = stageProgress(progress, 0.3, 0.45);
+    const pMotor = stageProgress(progress, 0.45, 0.6);
+    const pControl = stageProgress(progress, 0.6, 0.72);
+    const pSolar = stageProgress(progress, 0.72, 0.88);
+    const pBody = stageProgress(progress, 0.88, 1);
+
     targets.wheelFL.lerpVectors(positions.wheelFL.exp, positions.wheelFL.asb, pWheels);
     targets.wheelFR.lerpVectors(positions.wheelFR.exp, positions.wheelFR.asb, pWheels);
     targets.wheelRL.lerpVectors(positions.wheelRL.exp, positions.wheelRL.asb, pWheels);
     targets.wheelRR.lerpVectors(positions.wheelRR.exp, positions.wheelRR.asb, pWheels);
-
-    // Stage 2: Battery (0.15 to 0.30)
-    const pBattery = Math.max(0, Math.min(1, (progress - 0.15) / 0.15));
     targets.battery.lerpVectors(positions.battery.exp, positions.battery.asb, pBattery);
-
-    // Stage 3: Chassis (0.30 to 0.45)
-    const pChassis = Math.max(0, Math.min(1, (progress - 0.30) / 0.15));
     targets.chassis.lerpVectors(positions.chassis.exp, positions.chassis.asb, pChassis);
-
-    // Stage 4: Motor (0.45 to 0.60)
-    const pMotor = Math.max(0, Math.min(1, (progress - 0.45) / 0.15));
     targets.motor.lerpVectors(positions.motor.exp, positions.motor.asb, pMotor);
-
-    // Stage 5: Electronics & Wiring (0.60 to 0.72)
-    const pControl = Math.max(0, Math.min(1, (progress - 0.60) / 0.12));
     targets.electronics.lerpVectors(positions.electronics.exp, positions.electronics.asb, pControl);
     targets.wiring.lerpVectors(positions.wiring.exp, positions.wiring.asb, pControl);
-
-    // Stage 6: Solar Panels (0.72 to 0.88)
-    const pSolar = Math.max(0, Math.min(1, (progress - 0.72) / 0.16));
     targets.solarLeft.lerpVectors(positions.solarLeft.exp, positions.solarLeft.asb, pSolar);
     targets.solarRight.lerpVectors(positions.solarRight.exp, positions.solarRight.asb, pSolar);
-
-    // Stage 7: Body Canopy (0.88 to 1.0)
-    const pBody = Math.max(0, Math.min(1, (progress - 0.88) / 0.12));
     targets.body.lerpVectors(positions.body.exp, positions.body.asb, pBody);
 
-    // 3. Calculate interpolated camera position and target view based on scroll progress
-    // Find the current viewport bounds
-    let prevView = cameraViews[0];
-    let nextView = cameraViews[cameraViews.length - 1];
-    for (let i = 0; i < cameraViews.length - 1; i++) {
+    let previous = cameraViews[0];
+    let next = cameraViews[cameraViews.length - 1];
+
+    for (let i = 0; i < cameraViews.length - 1; i += 1) {
       if (progress >= cameraViews[i].progress && progress <= cameraViews[i + 1].progress) {
-        prevView = cameraViews[i];
-        nextView = cameraViews[i + 1];
+        previous = cameraViews[i];
+        next = cameraViews[i + 1];
         break;
       }
     }
-    const viewProgress = (progress - prevView.progress) / (nextView.progress - prevView.progress || 1);
-    targets.cameraPos.lerpVectors(prevView.pos, nextView.pos, viewProgress);
-    targets.cameraLook.lerpVectors(prevView.look, nextView.look, viewProgress);
 
-    // 4. Smoothly slide (lerp) components toward their computed targets with inertia/damping
-    const damping = 0.08; // Damping constant (lower is smoother/slower)
-    if (wheelFL.current) wheelFL.current.position.lerp(targets.wheelFL, damping);
-    if (wheelFR.current) wheelFR.current.position.lerp(targets.wheelFR, damping);
-    if (wheelRL.current) wheelRL.current.position.lerp(targets.wheelRL, damping);
-    if (wheelRR.current) wheelRR.current.position.lerp(targets.wheelRR, damping);
-    if (battery.current) battery.current.position.lerp(targets.battery, damping);
-    if (chassis.current) chassis.current.position.lerp(targets.chassis, damping);
-    if (motor.current) motor.current.position.lerp(targets.motor, damping);
-    if (electronics.current) electronics.current.position.lerp(targets.electronics, damping);
-    if (wiring.current) wiring.current.position.lerp(targets.wiring, damping);
-    if (solarPanelLeft.current) solarPanelLeft.current.position.lerp(targets.solarLeft, damping);
-    if (solarPanelRight.current) solarPanelRight.current.position.lerp(targets.solarRight, damping);
-    if (body.current) body.current.position.lerp(targets.body, damping);
+    const cameraProgress = clamp01(
+      (progress - previous.progress) / (next.progress - previous.progress || 1)
+    );
 
-    // 5. Smoothly glide camera and controls targets to focus on the active component
-    state.camera.position.lerp(targets.cameraPos, 0.04); // Slightly slower camera glide for premium cinematic feel
-    const controls = state.controls as any;
-    if (controls) {
-      controls.target.lerp(targets.cameraLook, 0.04);
+    targets.cameraPos.lerpVectors(previous.pos, next.pos, cameraProgress);
+    targets.cameraLook.lerpVectors(previous.look, next.look, cameraProgress);
+
+    const damping = 0.085;
+
+    wheelFL.current?.position.lerp(targets.wheelFL, damping);
+    wheelFR.current?.position.lerp(targets.wheelFR, damping);
+    wheelRL.current?.position.lerp(targets.wheelRL, damping);
+    wheelRR.current?.position.lerp(targets.wheelRR, damping);
+    battery.current?.position.lerp(targets.battery, damping);
+    chassis.current?.position.lerp(targets.chassis, damping);
+    motor.current?.position.lerp(targets.motor, damping);
+    electronics.current?.position.lerp(targets.electronics, damping);
+    wiring.current?.position.lerp(targets.wiring, damping);
+    solarPanelLeft.current?.position.lerp(targets.solarLeft, damping);
+    solarPanelRight.current?.position.lerp(targets.solarRight, damping);
+    body.current?.position.lerp(targets.body, damping);
+
+    state.camera.position.lerp(targets.cameraPos, 0.045);
+
+    const controls = state.controls as {
+      target?: Vector3;
+      update?: () => void;
+    } | null;
+
+    if (controls?.target && controls.update) {
+      controls.target.lerp(targets.cameraLook, 0.045);
       controls.update();
     } else {
       state.camera.lookAt(targets.cameraLook);
     }
 
-    // Spin wheels and rotate chassis subtly once fully assembled (progress > 0.9)
     if (progress > 0.9) {
-      if (wheelFL.current) wheelFL.current.rotation.x += 0.05;
-      if (wheelFR.current) wheelFR.current.rotation.x += 0.05;
-      if (wheelRL.current) wheelRL.current.rotation.x += 0.05;
-      if (wheelRR.current) wheelRR.current.rotation.x += 0.05;
+      const wheelSpin = state.clock.getElapsedTime() * 0.7;
+      wheelFL.current?.rotation.set(wheelSpin, 0, Math.PI / 2);
+      wheelFR.current?.rotation.set(wheelSpin, 0, Math.PI / 2);
+      wheelRL.current?.rotation.set(wheelSpin, 0, Math.PI / 2);
+      wheelRR.current?.rotation.set(wheelSpin, 0, Math.PI / 2);
     }
 
-    // Auto rotate scene slowly ONLY when final assembly is complete (progress > 0.95)
-    if (progress > 0.95 && groupRef.current) {
-      groupRef.current.rotation.y = (state.clock.getElapsedTime() - (10)) * 0.15;
-    } else if (groupRef.current) {
-      groupRef.current.rotation.y = 0; // Lock rotation during assembly stages for clear visibility
+    if (groupRef.current) {
+      const targetRotation = progress > 0.96 ? 0.22 : 0;
+      groupRef.current.rotation.y +=
+        (targetRotation - groupRef.current.rotation.y) * 0.04;
     }
   });
 
-  const getMaterialProps = (partId: string, defaultColor: string, glowColor: string = "#1683FF") => {
-    const isHighlighted = activePartId === partId;
+  const material = (
+    stageId: string,
+    color: string,
+    metalness = 0.65,
+    roughness = 0.28
+  ) => {
+    const highlighted = activePartId === stageId;
+
     return {
-      color: isHighlighted ? glowColor : defaultColor,
-      emissive: isHighlighted ? glowColor : "#000000",
-      emissiveIntensity: isHighlighted ? 1.5 : 0.1,
-      roughness: 0.1,
-      metalness: 0.9,
+      color: highlighted ? "#38BDF8" : color,
+      metalness,
+      roughness,
+      emissive: highlighted ? "#0EA5E9" : "#000000",
+      emissiveIntensity: highlighted ? 0.8 : 0.04,
     };
   };
 
   return (
-    <group ref={groupRef} position={[0, -0.2, 0]}>
-      
-      {/* 1. WHEELS (Mobility Stage) */}
-      <group ref={wheelFL}>
-        {/* Outer Tire */}
-        <mesh rotation={[0, 0, Math.PI / 2]}>
-          <cylinderGeometry args={[0.5, 0.5, 0.25, 32]} />
-          <meshStandardMaterial {...getMaterialProps("mobility", "#1e293b", "#38BDF8")} />
-        </mesh>
-        {/* Inner metal rim */}
-        <mesh rotation={[0, 0, Math.PI / 2]}>
-          <cylinderGeometry args={[0.3, 0.3, 0.27, 16]} />
-          <meshStandardMaterial color="#64748b" metalness={0.9} roughness={0.1} />
-        </mesh>
-        {/* Tech glowing core dot */}
-        <mesh position={[0, 0, 0.14]}>
-          <cylinderGeometry args={[0.08, 0.08, 0.02, 16]} />
-          <meshStandardMaterial color="#38BDF8" emissive="#38BDF8" emissiveIntensity={1} />
-        </mesh>
-      </group>
+    <group ref={groupRef} position={[0, -0.25, 0]}>
+      {/* WHEELS */}
+      {[wheelFL, wheelFR, wheelRL, wheelRR].map((ref, index) => (
+        <group key={index} ref={ref}>
+          <mesh rotation={[0, 0, Math.PI / 2]}>
+            <cylinderGeometry args={[0.58, 0.58, 0.28, 32]} />
+            <meshStandardMaterial {...material("mobility", "#111827", 0.35, 0.55)} />
+          </mesh>
+          <mesh rotation={[0, 0, Math.PI / 2]}>
+            <cylinderGeometry args={[0.34, 0.34, 0.31, 20]} />
+            <meshStandardMaterial {...material("mobility", "#64748B", 0.9, 0.18)} />
+          </mesh>
+        </group>
+      ))}
 
-      <group ref={wheelFR}>
-        <mesh rotation={[0, 0, Math.PI / 2]}>
-          <cylinderGeometry args={[0.5, 0.5, 0.25, 32]} />
-          <meshStandardMaterial {...getMaterialProps("mobility", "#1e293b", "#38BDF8")} />
-        </mesh>
-        <mesh rotation={[0, 0, Math.PI / 2]}>
-          <cylinderGeometry args={[0.3, 0.3, 0.27, 16]} />
-          <meshStandardMaterial color="#64748b" metalness={0.9} roughness={0.1} />
-        </mesh>
-        <mesh position={[0, 0, -0.14]}>
-          <cylinderGeometry args={[0.08, 0.08, 0.02, 16]} />
-          <meshStandardMaterial color="#38BDF8" emissive="#38BDF8" emissiveIntensity={1} />
-        </mesh>
-      </group>
-
-      <group ref={wheelRL}>
-        <mesh rotation={[0, 0, Math.PI / 2]}>
-          <cylinderGeometry args={[0.5, 0.5, 0.25, 32]} />
-          <meshStandardMaterial {...getMaterialProps("mobility", "#1e293b", "#38BDF8")} />
-        </mesh>
-        <mesh rotation={[0, 0, Math.PI / 2]}>
-          <cylinderGeometry args={[0.3, 0.3, 0.27, 16]} />
-          <meshStandardMaterial color="#64748b" metalness={0.9} roughness={0.1} />
-        </mesh>
-        <mesh position={[0, 0, 0.14]}>
-          <cylinderGeometry args={[0.08, 0.08, 0.02, 16]} />
-          <meshStandardMaterial color="#38BDF8" emissive="#38BDF8" emissiveIntensity={1} />
-        </mesh>
-      </group>
-
-      <group ref={wheelRR}>
-        <mesh rotation={[0, 0, Math.PI / 2]}>
-          <cylinderGeometry args={[0.5, 0.5, 0.25, 32]} />
-          <meshStandardMaterial {...getMaterialProps("mobility", "#1e293b", "#38BDF8")} />
-        </mesh>
-        <mesh rotation={[0, 0, Math.PI / 2]}>
-          <cylinderGeometry args={[0.3, 0.3, 0.27, 16]} />
-          <meshStandardMaterial color="#64748b" metalness={0.9} roughness={0.1} />
-        </mesh>
-        <mesh position={[0, 0, -0.14]}>
-          <cylinderGeometry args={[0.08, 0.08, 0.02, 16]} />
-          <meshStandardMaterial color="#38BDF8" emissive="#38BDF8" emissiveIntensity={1} />
-        </mesh>
-      </group>
-
-      {/* 2. BATTERY (Power Stage) */}
-      <group ref={battery}>
-        {/* Glowing battery cells block */}
-        <mesh>
-          <boxGeometry args={[0.9, 0.3, 0.8]} />
-          <meshStandardMaterial {...getMaterialProps("power", "#0f172a", "#0066FF")} />
-        </mesh>
-        {/* Cyber energy rods on top of battery */}
-        <mesh position={[0, 0.16, 0]}>
-          <boxGeometry args={[0.7, 0.05, 0.6]} />
-          <meshStandardMaterial color="#38BDF8" emissive="#38BDF8" emissiveIntensity={1.2} />
-        </mesh>
-      </group>
-
-      {/* 3. CHASSIS / STRUCTURE (Structure Stage) */}
+      {/* CHASSIS / FRAME */}
       <group ref={chassis}>
-        {/* Main carbon-steel frame plate */}
         <mesh>
-          <boxGeometry args={[1.6, 0.08, 2.8]} />
-          <meshStandardMaterial {...getMaterialProps("structure", "#334155")} />
+          <boxGeometry args={[3.4, 0.18, 2.3]} />
+          <meshStandardMaterial {...material("structure", "#334155", 0.85, 0.25)} />
         </mesh>
-        
-        {/* Tubular spaceframe roll-cage rods */}
-        {/* Left rail */}
-        <mesh position={[-0.78, 0.3, 0]} rotation={[0, 0, 0]}>
-          <cylinderGeometry args={[0.04, 0.04, 2.7, 8]} />
-          <meshStandardMaterial color="#475569" metalness={0.9} />
+        <mesh position={[0, 0.35, 1.02]}>
+          <boxGeometry args={[3.25, 0.18, 0.16]} />
+          <meshStandardMaterial {...material("structure", "#64748B", 0.85, 0.22)} />
         </mesh>
-        {/* Right rail */}
-        <mesh position={[0.78, 0.3, 0]} rotation={[0, 0, 0]}>
-          <cylinderGeometry args={[0.04, 0.04, 2.7, 8]} />
-          <meshStandardMaterial color="#475569" metalness={0.9} />
+        <mesh position={[0, 0.35, -1.02]}>
+          <boxGeometry args={[3.25, 0.18, 0.16]} />
+          <meshStandardMaterial {...material("structure", "#64748B", 0.85, 0.22)} />
         </mesh>
-        {/* Cross support 1 */}
-        <mesh position={[0, 0.3, 1.0]} rotation={[0, 0, Math.PI / 2]}>
-          <cylinderGeometry args={[0.03, 0.03, 1.5, 8]} />
-          <meshStandardMaterial color="#475569" metalness={0.9} />
+        <mesh position={[-1.52, 0.35, 0]}>
+          <boxGeometry args={[0.16, 0.18, 2.1]} />
+          <meshStandardMaterial {...material("structure", "#64748B", 0.85, 0.22)} />
         </mesh>
-        {/* Cross support 2 */}
-        <mesh position={[0, 0.3, -1.0]} rotation={[0, 0, Math.PI / 2]}>
-          <cylinderGeometry args={[0.03, 0.03, 1.5, 8]} />
-          <meshStandardMaterial color="#475569" metalness={0.9} />
+        <mesh position={[1.52, 0.35, 0]}>
+          <boxGeometry args={[0.16, 0.18, 2.1]} />
+          <meshStandardMaterial {...material("structure", "#64748B", 0.85, 0.22)} />
         </mesh>
-
-        {/* Seat */}
-        <mesh position={[0, 0.35, -0.3]}>
-          <boxGeometry args={[0.7, 0.6, 0.6]} />
-          <meshStandardMaterial color="#020617" roughness={0.8} />
+        <mesh position={[0, 0.42, 0.35]}>
+          <boxGeometry args={[1.15, 0.18, 0.9]} />
+          <meshStandardMaterial {...material("structure", "#1E293B", 0.55, 0.45)} />
         </mesh>
-        {/* Steering Column & wheel */}
-        <mesh position={[0, 0.6, 0.5]} rotation={[Math.PI / 6, 0, 0]}>
-          <cylinderGeometry args={[0.02, 0.02, 0.6, 8]} />
-          <meshStandardMaterial color="#1e293b" />
+        <mesh position={[0, 0.78, 0.78]} rotation={[Math.PI / 2.8, 0, 0]}>
+          <cylinderGeometry args={[0.055, 0.055, 0.75, 12]} />
+          <meshStandardMaterial {...material("structure", "#94A3B8", 0.9, 0.18)} />
         </mesh>
-        <mesh position={[0, 0.85, 0.65]} rotation={[Math.PI / 6, 0, 0]}>
-          <cylinderGeometry args={[0.2, 0.2, 0.03, 16]} />
-          <meshStandardMaterial color="#0f172a" />
+        <mesh position={[0, 1.02, 1.02]} rotation={[Math.PI / 2, 0, 0]}>
+          <torusGeometry args={[0.28, 0.045, 10, 24]} />
+          <meshStandardMaterial {...material("structure", "#64748B", 0.9, 0.18)} />
         </mesh>
       </group>
 
-      {/* 4. MOTOR / PROPULSION (Propulsion Stage) */}
+      {/* BATTERY */}
+      <group ref={battery}>
+        <mesh>
+          <boxGeometry args={[1.75, 0.42, 1.25]} />
+          <meshStandardMaterial {...material("power", "#1E293B", 0.75, 0.3)} />
+        </mesh>
+        <mesh position={[0, 0.22, 0]}>
+          <boxGeometry args={[1.25, 0.025, 0.78]} />
+          <meshStandardMaterial color="#0F172A" metalness={0.2} roughness={0.55} />
+        </mesh>
+        <mesh position={[-0.62, 0.24, 0.42]}>
+          <sphereGeometry args={[0.055, 12, 12]} />
+          <meshStandardMaterial color="#38BDF8" emissive="#38BDF8" emissiveIntensity={1.5} />
+        </mesh>
+      </group>
+
+      {/* MOTOR */}
       <group ref={motor}>
-        {/* High performance hub motor capsule */}
-        <mesh rotation={[0, 0, Math.PI / 2]}>
-          <cylinderGeometry args={[0.26, 0.26, 0.65, 16]} />
-          <meshStandardMaterial {...getMaterialProps("propulsion", "#0f172a", "#1683FF")} />
+        <mesh rotation={[Math.PI / 2, 0, 0]}>
+          <cylinderGeometry args={[0.42, 0.42, 0.75, 24]} />
+          <meshStandardMaterial {...material("propulsion", "#475569", 0.9, 0.2)} />
         </mesh>
-        {/* Reducer gearbox cylinder */}
-        <mesh position={[0, 0, 0.2]} rotation={[Math.PI / 2, 0, 0]}>
-          <cylinderGeometry args={[0.18, 0.18, 0.3, 16]} />
-          <meshStandardMaterial color="#475569" metalness={0.9} />
+        <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, 0, 0.4]}>
+          <cylinderGeometry args={[0.19, 0.19, 0.12, 20]} />
+          <meshStandardMaterial {...material("propulsion", "#CBD5E1", 0.95, 0.15)} />
         </mesh>
       </group>
 
-      {/* 5. CONTROL & ELECTRONICS (Control Stage) */}
+      {/* ELECTRONICS */}
       <group ref={electronics}>
-        {/* Motherboard controller plate */}
         <mesh>
-          <boxGeometry args={[0.5, 0.1, 0.4]} />
-          <meshStandardMaterial {...getMaterialProps("control", "#1e1b4b", "#1683FF")} />
+          <boxGeometry args={[0.9, 0.16, 0.62]} />
+          <meshStandardMaterial {...material("control", "#0F172A", 0.6, 0.3)} />
         </mesh>
-        {/* Processor block */}
-        <mesh position={[0, 0.06, 0]}>
-          <boxGeometry args={[0.18, 0.04, 0.18]} />
-          <meshStandardMaterial color="#0066FF" emissive="#0066FF" emissiveIntensity={1} />
+        <mesh position={[-0.22, 0.1, 0]}>
+          <boxGeometry args={[0.16, 0.05, 0.22]} />
+          <meshStandardMaterial color="#38BDF8" emissive="#38BDF8" emissiveIntensity={0.8} />
         </mesh>
-        {/* Small capacitors details */}
-        <mesh position={[-0.15, 0.08, -0.1]} rotation={[0, 0, 0]}>
-          <cylinderGeometry args={[0.04, 0.04, 0.08, 8]} />
-          <meshStandardMaterial color="#38BDF8" />
-        </mesh>
-        <mesh position={[-0.15, 0.08, 0.1]} rotation={[0, 0, 0]}>
-          <cylinderGeometry args={[0.04, 0.04, 0.08, 8]} />
-          <meshStandardMaterial color="#38BDF8" />
+        <mesh position={[0.22, 0.1, 0]}>
+          <boxGeometry args={[0.16, 0.05, 0.22]} />
+          <meshStandardMaterial color="#60A5FA" emissive="#60A5FA" emissiveIntensity={0.8} />
         </mesh>
       </group>
 
-      {/* Control Wiring segments */}
+      {/* WIRING */}
       <group ref={wiring}>
-        {/* Main active power lines */}
-        <mesh position={[-0.1, -0.05, 0]}>
-          <boxGeometry args={[0.02, 0.02, 1.8]} />
-          <meshStandardMaterial color="#0066FF" emissive="#0066FF" emissiveIntensity={0.8} />
+        <mesh position={[-0.8, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
+          <cylinderGeometry args={[0.025, 0.025, 1.4, 8]} />
+          <meshStandardMaterial {...material("control", "#111827", 0.15, 0.75)} />
         </mesh>
-        <mesh position={[0.1, -0.05, 0]}>
-          <boxGeometry args={[0.02, 0.02, 1.8]} />
-          <meshStandardMaterial color="#0066FF" emissive="#0066FF" emissiveIntensity={0.8} />
-        </mesh>
-      </group>
-
-      {/* 6. SOLAR WINGS (Renewable Energy Stage) */}
-      <group ref={solarPanelLeft}>
-        {/* Solar Wing */}
-        <mesh rotation={[-0.05, 0, -0.1]}>
-          <boxGeometry args={[0.8, 0.02, 2.0]} />
-          <meshStandardMaterial {...getMaterialProps("solar", "#082f49", "#38BDF8")} />
-        </mesh>
-        {/* Silicon grid patterns details */}
-        <mesh position={[0, 0.015, 0]} rotation={[-0.05, 0, -0.1]}>
-          <boxGeometry args={[0.76, 0.002, 1.96]} />
-          <meshStandardMaterial color="#0284c7" roughness={0.1} />
+        <mesh position={[0.8, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
+          <cylinderGeometry args={[0.025, 0.025, 1.4, 8]} />
+          <meshStandardMaterial {...material("control", "#111827", 0.15, 0.75)} />
         </mesh>
       </group>
 
-      <group ref={solarPanelRight}>
-        <mesh rotation={[-0.05, 0, 0.1]}>
-          <boxGeometry args={[0.8, 0.02, 2.0]} />
-          <meshStandardMaterial {...getMaterialProps("solar", "#082f49", "#38BDF8")} />
-        </mesh>
-        <mesh position={[0, 0.015, 0]} rotation={[-0.05, 0, 0.1]}>
-          <boxGeometry args={[0.76, 0.002, 1.96]} />
-          <meshStandardMaterial color="#0284c7" roughness={0.1} />
-        </mesh>
-      </group>
+      {/* SOLAR PANELS */}
+      {[solarPanelLeft, solarPanelRight].map((ref, index) => (
+        <group
+          key={index}
+          ref={ref}
+          rotation={[-0.12, 0, index === 0 ? -0.08 : 0.08]}
+        >
+          <mesh>
+            <boxGeometry args={[1.25, 0.08, 2.2]} />
+            <meshStandardMaterial {...material("solar", "#0F2A4A", 0.75, 0.2)} />
+          </mesh>
+          <mesh position={[0, 0.05, 0]}>
+            <boxGeometry args={[1.05, 0.012, 2]} />
+            <meshStandardMaterial color="#123A63" metalness={0.55} roughness={0.25} />
+          </mesh>
+        </group>
+      ))}
 
-      {/* 7. BODY CANOPY (Final Assembly Stage) */}
+      {/* BODY / FINAL SHELL */}
       <group ref={body}>
-        {/* Outer aerodynamic casing shell */}
         <mesh>
-          <boxGeometry args={[1.7, 0.08, 3.0]} />
-          <meshStandardMaterial {...getMaterialProps("final", "#1e293b", "#38BDF8")} opacity={0.3} transparent={true} />
+          <boxGeometry args={[3.45, 0.16, 2.05]} />
+          <meshStandardMaterial {...material("final", "#1E293B", 0.9, 0.2)} />
         </mesh>
-        {/* Windshield frame panel */}
-        <mesh position={[0, 0.4, 0.8]} rotation={[Math.PI / 4, 0, 0]}>
-          <boxGeometry args={[1.4, 0.04, 0.8]} />
-          <meshStandardMaterial color="#0f172a" opacity={0.6} transparent={true} />
+        <mesh position={[0, 0.48, 0.1]} scale={[1, 0.65, 0.88]}>
+          <sphereGeometry args={[1.35, 32, 16]} />
+          <meshStandardMaterial
+            {...material("final", "#0B1220", 0.75, 0.18)}
+            transparent
+            opacity={0.76}
+          />
+        </mesh>
+        <mesh position={[0, 0.58, 0.95]}>
+          <boxGeometry args={[2.8, 0.12, 0.08]} />
+          <meshStandardMaterial color="#38BDF8" emissive="#38BDF8" emissiveIntensity={0.7} />
         </mesh>
       </group>
-
     </group>
   );
 };
