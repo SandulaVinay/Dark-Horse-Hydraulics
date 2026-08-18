@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
-import { SolarCarModelPremium } from "./SolarCarModelPremium";
+import { SolarCarModelPremiumV2 } from "./SolarCarModelPremiumV2";
 
 interface SolarCarSceneProps { activePartId: string | null; }
 
@@ -19,7 +19,7 @@ export const SolarCarScene = ({ activePartId }: SolarCarSceneProps) => {
           <directionalLight position={[-7,6,-6]} intensity={0.55} color="#d6c5ad" />
           <spotLight position={[0,9,2]} intensity={1.45} angle={0.7} penumbra={0.6} color="#ffbd78" />
           <pointLight position={[0,2,-2]} intensity={0.42} color="#7bb6ae" distance={9} />
-          <SolarCarModelPremium activePartId={activePartId} />
+          <SolarCarModelPremiumV2 activePartId={activePartId} />
           <OrbitControls enableZoom={false} enablePan={false} enableRotate={inspectionMode} rotateSpeed={0.42} maxPolarAngle={Math.PI/2} minPolarAngle={0.25} />
         </Canvas>
       </Suspense>
