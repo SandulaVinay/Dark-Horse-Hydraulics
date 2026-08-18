@@ -56,8 +56,24 @@ export const SolarCarModel: React.FC<SolarCarModelProps> = ({ activePartId }) =>
       solarLeft: new Vector3(),
       solarRight: new Vector3(),
       body: new Vector3(),
+      cameraPos: new Vector3(),
+      cameraLook: new Vector3(),
     };
   }, [positions]);
+
+  // Define cinematic camera viewpoints per stage
+  const cameraViews = useMemo(() => {
+    return [
+      { progress: 0.0, pos: new Vector3(4, 2, 4), look: new Vector3(0, 0, 0) },       // Start: Wheels exploded
+      { progress: 0.15, pos: new Vector3(3, 1, 3.5), look: new Vector3(0, 0.3, 1) },  // Stage 1: Wheels assembled, look front low
+      { progress: 0.30, pos: new Vector3(2.5, 2.5, 2.5), look: new Vector3(0, 0.4, 0) },// Stage 2: Battery core focus
+      { progress: 0.45, pos: new Vector3(3.5, 1.8, 3.5), look: new Vector3(0, 0.4, 0) },// Stage 3: Chassis spaceframe
+      { progress: 0.60, pos: new Vector3(1.5, 1.5, -3.8), look: new Vector3(0, 0.3, -1.2) },// Stage 4: Rear Motor propulsion focus
+      { progress: 0.72, pos: new Vector3(2.2, 2.2, 2.5), look: new Vector3(0, 0.6, 0.8) },  // Stage 5: Electronics control
+      { progress: 0.88, pos: new Vector3(0.1, 5.0, 1.8), look: new Vector3(0, 1.0, 0) },    // Stage 6: Solar Panels top look down
+      { progress: 1.0, pos: new Vector3(4, 3, 5), look: new Vector3(0, 0.5, 0) }       // Final: Assembled full showcase
+    ];
+  }, []);
 
   useFrame((state) => {
     // 1. Calculate scroll progress reactively from the HTML container
@@ -105,7 +121,22 @@ export const SolarCarModel: React.FC<SolarCarModelProps> = ({ activePartId }) =>
     const pBody = Math.max(0, Math.min(1, (progress - 0.88) / 0.12));
     targets.body.lerpVectors(positions.body.exp, positions.body.asb, pBody);
 
-    // 3. Smoothly slide (lerp) components toward their computed targets with inertia/damping
+    // 3. Calculate interpolated camera position and target view based on scroll progress
+    // Find the current viewport bounds
+    let prevView = cameraViews[0];
+    let nextView = cameraViews[cameraViews.length - 1];
+    for (let i = 0; i < cameraViews.length - 1; i++) {
+      if (progress >= cameraViews[i].progress && progress <= cameraViews[i + 1].progress) {
+        prevView = cameraViews[i];
+        nextView = cameraViews[i + 1];
+        break;
+      }
+    }
+    const viewProgress = (progress - prevView.progress) / (nextView.progress - prevView.progress || 1);
+    targets.cameraPos.lerpVectors(prevView.pos, nextView.pos, viewProgress);
+    targets.cameraLook.lerpVectors(prevView.look, nextView.look, viewProgress);
+
+    // 4. Smoothly slide (lerp) components toward their computed targets with inertia/damping
     const damping = 0.08; // Damping constant (lower is smoother/slower)
     if (wheelFL.current) wheelFL.current.position.lerp(targets.wheelFL, damping);
     if (wheelFR.current) wheelFR.current.position.lerp(targets.wheelFR, damping);
@@ -120,6 +151,16 @@ export const SolarCarModel: React.FC<SolarCarModelProps> = ({ activePartId }) =>
     if (solarPanelRight.current) solarPanelRight.current.position.lerp(targets.solarRight, damping);
     if (body.current) body.current.position.lerp(targets.body, damping);
 
+    // 5. Smoothly glide camera and controls targets to focus on the active component
+    state.camera.position.lerp(targets.cameraPos, 0.04); // Slightly slower camera glide for premium cinematic feel
+    const controls = state.controls as any;
+    if (controls) {
+      controls.target.lerp(targets.cameraLook, 0.04);
+      controls.update();
+    } else {
+      state.camera.lookAt(targets.cameraLook);
+    }
+
     // Spin wheels and rotate chassis subtly once fully assembled (progress > 0.9)
     if (progress > 0.9) {
       if (wheelFL.current) wheelFL.current.rotation.x += 0.05;
@@ -128,9 +169,11 @@ export const SolarCarModel: React.FC<SolarCarModelProps> = ({ activePartId }) =>
       if (wheelRR.current) wheelRR.current.rotation.x += 0.05;
     }
 
-    // Auto rotate scene slowly for nice premium presentation
-    if (groupRef.current) {
-      groupRef.current.rotation.y = state.clock.getElapsedTime() * 0.15;
+    // Auto rotate scene slowly ONLY when final assembly is complete (progress > 0.95)
+    if (progress > 0.95 && groupRef.current) {
+      groupRef.current.rotation.y = (state.clock.getElapsedTime() - (10)) * 0.15;
+    } else if (groupRef.current) {
+      groupRef.current.rotation.y = 0; // Lock rotation during assembly stages for clear visibility
     }
   });
 
