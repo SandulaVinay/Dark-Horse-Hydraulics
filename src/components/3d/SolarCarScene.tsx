@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import { SolarCarModelPremiumV2 } from "./SolarCarModelPremiumV2";
+import { SolarCarSilhouette } from "./SolarCarSilhouette";
 
 interface SolarCarSceneProps { activePartId: string | null; }
 
@@ -12,10 +13,10 @@ export const SolarCarScene = ({ activePartId }: SolarCarSceneProps) => {
   return (
     <div className="relative h-full min-h-0 w-full overflow-hidden solar-scene">
       <div className="engineering-glow pointer-events-none absolute inset-0" />
-      <div className="blueprint-grid-fine pointer-events-none absolute inset-0 opacity-25" />
+      <div className="blueprint-grid-fine pointer-events-none absolute inset-0 opacity-20" />
       <Suspense fallback={<div className="absolute inset-0 flex flex-col items-center justify-center bg-[#141411]/95 px-5 text-center"><span className="text-xs font-extrabold tracking-[0.2em] text-[#E89A68]">DARK HORSE ENGINEERING LAB</span><span className="mt-2 text-[10px] font-mono uppercase tracking-[0.16em] text-[#bcb6aa]">Building the prototype</span></div>}>
         <Canvas
-          camera={{ position: isMobile ? [6.7, 3.7, 7.8] : [4, 3, 5], fov: isMobile ? 50 : 45 }}
+          camera={{ position: isMobile ? [6.7, 3.7, 7.8] : [6.4, 3.35, 7.8], fov: isMobile ? 50 : 43 }}
           dpr={isMobile ? [1, 1.25] : [1, 1.5]}
           frameloop="always"
           gl={{ antialias: !isMobile, alpha: true, powerPreference: "high-performance" }}
@@ -28,6 +29,7 @@ export const SolarCarScene = ({ activePartId }: SolarCarSceneProps) => {
           <spotLight position={[0, 9, 2]} intensity={1.45} angle={0.7} penumbra={0.6} color="#ffbd78" />
           <pointLight position={[0, 2, -2]} intensity={0.42} color="#7bb6ae" distance={9} />
           <SolarCarModelPremiumV2 activePartId={activePartId} />
+          <SolarCarSilhouette activePartId={activePartId} />
           <OrbitControls
             enableZoom={false}
             enablePan={false}
@@ -50,17 +52,8 @@ export const SolarCarScene = ({ activePartId }: SolarCarSceneProps) => {
         </div>
       </div>
 
-      {inspectionMode && (
-        <div className="pointer-events-none absolute bottom-5 right-5 hidden rounded-full border border-white/10 bg-black/35 px-3 py-2 text-[9px] font-mono tracking-[0.16em] text-white/70 backdrop-blur-md sm:block">
-          DRAG TO INSPECT
-        </div>
-      )}
-
-      {!inspectionMode && (
-        <div className="pointer-events-none absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full border border-white/10 bg-black/25 px-3 py-1.5 text-[8px] font-mono uppercase tracking-[0.16em] text-white/55 backdrop-blur-md sm:hidden">
-          Scroll to assemble
-        </div>
-      )}
+      {inspectionMode && <div className="pointer-events-none absolute bottom-5 right-5 hidden rounded-full border border-white/10 bg-black/35 px-3 py-2 text-[9px] font-mono tracking-[0.16em] text-white/70 backdrop-blur-md sm:block">DRAG TO INSPECT</div>}
+      {!inspectionMode && <div className="pointer-events-none absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full border border-white/10 bg-black/25 px-3 py-1.5 text-[8px] font-mono uppercase tracking-[0.16em] text-white/55 backdrop-blur-md sm:hidden">Scroll to assemble</div>}
     </div>
   );
 };
