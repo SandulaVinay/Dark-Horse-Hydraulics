@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import './brand-refresh.css'
 import './mobile.css'
+import './mobileAssembly.css'
 import App from './App.tsx'
 import { enableMobileAssemblyScroll } from './components/3d/mobileAssemblyController'
 
