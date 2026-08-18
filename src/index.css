@@ -2,15 +2,15 @@
 
 :root {
   /* Color Tokens */
-  --background: #050810;
-  --secondary-background: #0B1220;
-  --primary-dark-surface: #101827;
-  --primary-brand-blue: #0066FF;
-  --electric-blue: #1683FF;
-  --bright-blue: #38BDF8;
-  --primary-text: #F8FAFC;
-  --secondary-text: #94A3B8;
-  --border: #1E293B;
+  --background: #090D16;
+  --secondary-background: #0F131C;
+  --primary-dark-surface: #131924;
+  --primary-brand-blue: #2563EB;
+  --electric-blue: #3B82F6;
+  --bright-blue: #60A5FA;
+  --primary-text: #F3F4F6;
+  --secondary-text: #9CA3AF;
+  --border: #1F2937;
   --whatsapp: #25D366;
 
   /* Typography */
