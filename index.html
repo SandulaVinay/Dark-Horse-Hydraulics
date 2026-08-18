@@ -9,7 +9,38 @@
       name="description"
       content="Dark Horse Hydraulics turns student engineering ideas into working prototypes across mobility, hydraulics, robotics, renewable energy and automation."
     />
+    <meta name="color-scheme" content="dark" />
     <title>Dark Horse Hydraulics — Engineering Ideas Into Reality</title>
+
+    <!--
+      The existing component system uses Tailwind utility classes extensively.
+      Keep the runtime compiler temporarily so the current Vite deployment
+      renders exactly as designed while the utility system is migrated to a
+      fully compiled Tailwind setup later.
+    -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              darkhorse: {
+                950: '#05070b',
+                900: '#0a0f18',
+                800: '#111827',
+                blue: '#2563eb',
+                electric: '#3b82f6',
+                cyan: '#22d3ee',
+              },
+            },
+            fontFamily: {
+              sans: ['Inter', 'sans-serif'],
+              heading: ['Outfit', 'sans-serif'],
+            },
+          },
+        },
+      };
+    </script>
   </head>
   <body>
     <div id="root"></div>
