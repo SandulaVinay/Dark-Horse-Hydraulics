@@ -1,6 +1,5 @@
 import { Suspense } from "react";
 import { Canvas } from "@react-three/fiber";
-import { OrbitControls } from "@react-three/drei";
 import { SolarCarModelPremiumV2 } from "./SolarCarModelPremiumV2";
 import { SolarCarSilhouette } from "./SolarCarSilhouette";
 
@@ -20,7 +19,9 @@ export const SolarCarScene = ({ activePartId }: SolarCarSceneProps) => {
           dpr={isMobile ? [1, 1.25] : [1, 1.5]}
           frameloop="always"
           gl={{ antialias: !isMobile, alpha: true, powerPreference: "high-performance" }}
-          style={{ height: "100%", width: "100%", touchAction: "pan-y" }}
+          style={{ height: "100%", width: "100%", touchAction: "none" }}
+          onPointerDown={(event) => event.stopPropagation()}
+          onWheel={(event) => event.preventDefault()}
         >
           <ambientLight intensity={0.46} color="#fff7e8" />
           <hemisphereLight args={["#fff5e4", "#181611", 0.72]} />
@@ -30,15 +31,6 @@ export const SolarCarScene = ({ activePartId }: SolarCarSceneProps) => {
           <pointLight position={[0, 2, -2]} intensity={0.42} color="#7bb6ae" distance={9} />
           <SolarCarModelPremiumV2 activePartId={activePartId} />
           <SolarCarSilhouette activePartId={activePartId} />
-          <OrbitControls
-            enableZoom={false}
-            enablePan={false}
-            enableRotate={inspectionMode}
-            rotateSpeed={0.42}
-            maxPolarAngle={Math.PI / 2}
-            minPolarAngle={0.25}
-            makeDefault
-          />
         </Canvas>
       </Suspense>
 
