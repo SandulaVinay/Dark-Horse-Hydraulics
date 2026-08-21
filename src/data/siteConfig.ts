@@ -1,6 +1,6 @@
 export const siteConfig = {
   companyName: "Dark Horse Hydraulics",
-  whatsappNumber: "+919849993991", // Configurable WhatsApp number
+  whatsappNumber: "+919035414890", // Configurable WhatsApp number
   email: "info@darkhorsehydraulics.com",
   address: "[COMPANY ADDRESS]",
   modelSource: "placeholder" as "placeholder" | "glb",
